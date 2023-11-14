@@ -373,8 +373,9 @@ def populate_database():
                     student_id INTEGER NOT NULL,
                     FOREIGN KEY(class_id) REFERENCES class(id),
                     FOREIGN KEY(student_id) REFERENCES student(id)
-                )"""
+                );"""
     create_table(conn, dropped_table)
+
     
     users_table = """CREATE TABLE IF NOT EXISTS users (
                     username VARCHAR NOT NULL,
@@ -383,6 +384,38 @@ def populate_database():
                 )"""
     create_table(users_conn, users_table)
 
+######################################################################################
+    # Define the CREATE INDEX statement FOR USERS DB ******************************
+    cursor = users_conn.cursor()
+    cursor.execute("""CREATE INDEX USERS_username ON USERS(username);""")
+    cursor.execute("""""")
+    # Commit the changes to the database (if needed)
+    conn.commit()
+
+
+
+
+
+    # Define the CREATE INDEX statement FOR database DB ******************************
+    cursor = conn.cursor()
+    cursor.execute("""CREATE INDEX STUDENT_id ON STUDENT(id);""")
+    cursor.execute("""CREATE INDEX INSTRUCTOR_ID ON INSTRUCTOR(id);""")
+    cursor.execute("""CREATE INDEX ENROLLMENT_studentid ON ENROLLMENT(student_id);""")
+    cursor.execute("""CREATE INDEX CLASS_id ON CLASS(id);""")
+    cursor.execute("""CREATE INDEX ENROLLMENT_classid_studentId ON ENROLLMENT(class_id, student_id);""")
+    cursor.execute("""CREATE INDEX DROPPED_classid_studentid ON DROPPED(class_id, student_id);""")
+    cursor.execute("""CREATE INDEX CLASS_id_maxenroll ON CLASS(id, max_enroll);""")
+    cursor.execute("""CREATE INDEX ENROLLMENT_studentid_classid_placement ON ENROLLMENT(student_id, class_id, placement);""")
+    cursor.execute("""CREATE INDEX STUDENT_id_waitlistcount ON STUDENT(id, waitlist_count);""")
+    cursor.execute("""CREATE INDEX ENROLLMENT_classid_placement ON ENROLLMENT(class_id, placement);""")
+    cursor.execute("""CREATE INDEX CLASS_instructorid ON CLASS(instructor_id);""")
+    cursor.execute("""CREATE INDEX CLASS_id_instructorid ON CLASS(id, instructor_id);""")
+    cursor.execute("""CREATE INDEX CLASS_instructorid_id_maxenroll ON CLASS(instructor_id, id, max_enroll);""")
+    cursor.execute("""CREATE INDEX INSTRUCTOR_username ON INSTRUCTOR(username);""")
+    cursor.execute("""CREATE INDEX STUDENT_username ON STUDENT(username);""")
+    conn.commit()
+
+######################################################################################
     cursor = conn.cursor()
 
     users_cursor = users_conn.cursor()

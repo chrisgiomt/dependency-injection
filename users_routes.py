@@ -4,7 +4,7 @@ import base64
 import hashlib
 import secrets
 import itertools
-import logging
+import logging.config
 
 from fastapi import Depends, HTTPException, APIRouter, status
 from schemas import Class
@@ -21,32 +21,44 @@ secondary_users_db_1 = "var/secondary/fuse/users.db"
 secondary_users_db_2 = "var/secondary_2/fuse/users.db"
 enrollmentdb = "database.db"
 
-ALGORITHM = "pbkdf2_sha256"
+class Settings(BaseSettings, env_file=".env", extra="ignore"):
+    logging_config: str
 
-# class Settings(BaseSettings, env_file=".env", extra="ignore"):
-#     database: str
+def get_logger():
+    return logging.getLogger(__name__)
+
+
+ALGORITHM = "pbkdf2_sha256"
 
 class Login(BaseModel):
     username: str
     password: str
 
 
+settings = Settings()
+
 # Connect to the two secondary users databases
-def get_secondary_users_db_1():
+def get_secondary_users_db_1(logger: logging.Logger = Depends(get_logger)):
     with contextlib.closing(sqlite3.connect(secondary_users_db_1, check_same_thread=False)) as db:
         db.row_factory = sqlite3.Row
+        db.set_trace_callback(logger.debug)
         yield db
 
-def get_secondary_users_db_2():
+def get_secondary_users_db_2(logger: logging.Logger = Depends(get_logger)):
     with contextlib.closing(sqlite3.connect(secondary_users_db_2, check_same_thread=False)) as db:
         db.row_factory = sqlite3.Row
+        db.set_trace_callback(logger.debug)
         yield db
 
 # Connect to the enrollment database
-def get_enrollment_db():
+def get_enrollment_db(logger: logging.Logger = Depends(get_logger)):
     with contextlib.closing(sqlite3.connect(enrollmentdb, check_same_thread=False)) as edb:
         edb.row_factory = sqlite3.Row
+        edb.set_trace_callback(logger.debug)
         yield edb
+
+
+logging.config.fileConfig(settings.logging_config, disable_existing_loggers=False)
 
 # Function used to hash a password
 def hash_password(password, salt=None, iterations=260000):

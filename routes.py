@@ -4,15 +4,22 @@ import sqlite3
 import base64
 import hashlib
 import secrets
+import logging.config
 
 from fastapi import Depends, HTTPException, APIRouter, status
 from schemas import Class
 
 from pydantic import BaseModel
-
+from pydantic_settings import BaseSettings
 
 router = APIRouter()
 dropped = []
+
+class Settings(BaseSettings, env_file=".env", extra="ignore"):
+    logging_config: str
+
+def get_logger():
+    return logging.getLogger(__name__)
 
 class Register(BaseModel):
     first_name: str
@@ -30,16 +37,19 @@ ALGORITHM = "pbkdf2_sha256"
 primary_users_db = "var/primary/fuse/users.db"
 
 # Connect to the database
-def get_db():
+def get_db(logger: logging.Logger = Depends(get_logger)):
     with contextlib.closing(sqlite3.connect(database, check_same_thread=False)) as db:
         db.row_factory = sqlite3.Row
+        db.set_trace_callback(logger.debug)
         yield db
 
 # Connect to the primary users database
-def get_primary_users_db():
+def get_primary_users_db(logger: logging.Logger = Depends(get_logger)):
     with contextlib.closing(sqlite3.connect(primary_users_db, check_same_thread=False)) as db:
         db.row_factory = sqlite3.Row
+        db.set_trace_callback(logger.debug)
         yield db
+
 # Function used to hash a password
 def hash_password(password, salt=None, iterations=260000):
     if salt is None:
